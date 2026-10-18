@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#25706D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Pelacak Cemas</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#F1F7F6;--cd:#fff;--ink:#1F3A3A;--mut:#566F6E;--ac:#25706D;--on:#fff;--so:#E4F0EF;--ln:#9DBDB9}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#172426;--cd:#1F3236;--ink:#E3EEEC;--mut:#9FB8B5;--ac:#5FB3AD;--on:#0F2A2A;--so:#2B4448;--ln:#476466}}
+:root[data-theme=dark]{--bg:#172426;--cd:#1F3236;--ink:#E3EEEC;--mut:#9FB8B5;--ac:#5FB3AD;--on:#0F2A2A;--so:#2B4448;--ln:#476466}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,sans-serif}
+body{padding-top:env(safe-area-inset-top,0px)}
+main{max-width:480px;margin:0 auto;padding:16px 16px 100px;display:flex;flex-direction:column;gap:14px}
+.c{background:var(--cd);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px #0002}
+h1{margin:0;font-size:24px}h2{margin:0;font-size:16px}
+.m{font-size:12px;color:var(--mut);margin:0;line-height:1.4}
+.r{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.w{flex-wrap:wrap}
+button,input{font:inherit;color:inherit}
+.b{flex:1;min-height:44px;padding:0 12px;border:0;border-radius:12px;background:var(--so);cursor:pointer}
+.b.on{background:var(--ac);color:var(--on)}
+.p{min-height:52px;border:0;border-radius:16px;background:var(--ac);color:var(--on);font-weight:700;font-size:16px;cursor:pointer}
+.d{border:1px dashed var(--ac);background:transparent;color:var(--ac)}
+.s{width:44px;flex:none;font-size:20px;padding:0}
+input[type=range]{width:100%;height:32px;accent-color:var(--ac)}
+input[type=time],input[type=text]{min-height:44px;padding:0 10px;border:1px solid var(--ln);border-radius:12px;background:var(--cd)}
+.k{background:var(--so);border-radius:12px;padding:10px 12px;font-size:13px}
+.big{font-size:40px;font-weight:700;color:var(--ac);line-height:1.1}
+nav{position:fixed;left:0;right:0;bottom:0;padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));background:var(--cd);display:flex;gap:4px;box-shadow:0 -1px 4px #0002}
+nav .b{background:transparent;min-height:56px;font-size:11px;padding:0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+textarea{width:100%;min-height:64px;padding:10px;border:1px solid var(--ln);border-radius:12px;background:var(--cd);font:inherit;color:inherit;resize:none}
+@media print{nav,.np{display:none}}
+nav .b.on{background:var(--so);color:var(--ac)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const $=s=>document.querySelector(s);
+let S=null;try{S=JSON.parse(localStorage.getItem('tc')||'null')}catch(e){}
+S=S||{name:'Sul',theme:'auto',days:{},l:{mn:['Kopi pahit','Kopi gula','Teh pahit','Teh gula'],cm:['Gorengan']}};
+S.l.ol=S.l.ol||['Lari','Jalan','Gym'];S.l.tg=S.l.tg||['Cari kerja','Uang','Tidur kurang','Kesalahan','Keluarga'];S.pm=S.pm||[];let F={tg:[],k:5},RD='',PV='g',PER=28,CF=0;
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const save=()=>{try{localStorage.setItem('tc',JSON.stringify(S))}catch(e){}};
+const H=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const z2=n=>String(n).padStart(2,'0');
+const kd=dt=>dt.getFullYear()+'-'+z2(dt.getMonth()+1)+'-'+z2(dt.getDate());
+const day=()=>S.days[kd(new Date())]||(S.days[kd(new Date())]={c:[null,null,null],g:{},ob:[0,0],ol:{},mk:{},q:{},sl:[]});
+const f1=n=>(Math.round(n*10)/10+'').replace('.',',');
+let v='home';
+const bt=(t,on,a,k)=>`<button class="b${on?' on':''}" data-a="${a}" data-k="${k}">${t}</button>`;
+const seg=(it,cur,a,k0)=>`<div class="r">${it.map((t,i)=>bt(t,cur===i,a,k0+i)).join('')}</div>`;
+const rng=(l,val,k)=>`<div><div class="r"><label for="${k}">${l}</label><b id="v${k}">${val==null?'–':val+'/10'}</b></div><input id="${k}" type="range" min="0" max="10" value="${val||0}" data-r="${k}"></div>`;
+const smry=d=>{const f=d.c.filter(x=>x!=null);return f.length?`Rata-rata (otomatis): <b>${f1(f.reduce((a,b)=>a+b,0)/f.length)}</b> · Puncak: <b>${Math.max(...f)}</b>`:'Belum ada skor hari ini'};
+const mins=(a,b)=>{const [h1,m1]=a.split(':'),[h2,m2]=b.split(':');return((+h2*60+ +m2)-(+h1*60+ +m1)+1440)%1440};
+const dur=m=>Math.floor(m/60)+' j '+m%60+' m';
+const peak=dt=>{const d=S.days[kd(dt)];if(!d)return 0;const f=d.c.filter(x=>x!=null);return f.length?Math.max(...f):0};
+const warn=()=>{let o=true;for(let i=0;i<(S.wd||3);i++){const dt=new Date();dt.setDate(dt.getDate()-i);if(peak(dt)<(S.wt||7))o=false}return o};
+const step=(l,i,d)=>{const nm=S.l[l][i],n=d.q[nm]||0;return `<div class="r"><span>${nm}</span><div class="r"><button class="b s" aria-label="Kurangi ${nm}" data-a="q" data-k="${l}|${i}|-1">-</button><b style="min-width:24px;text-align:center">${n}</b><button class="b s" aria-label="Tambah ${nm}" data-a="q" data-k="${l}|${i}|1">+</button></div></div>`};
+const list=(l,t,d)=>S.l[l].map((_,i)=>step(l,i,d)).join('')+`<div class="r"><input type="text" id="ni-${l}" placeholder="${t}" style="flex:1;min-width:0"><button class="b d" style="flex:none" data-a="add" data-k="${l}">Tambah</button></div>`;
+function home(){const m7=mean(lastD(7).filter(x=>x.d&&da(x.d)!=null).map(x=>da(x.d))),mp=mean(lastD(14).slice(0,7).filter(x=>x.d&&da(x.d)!=null).map(x=>da(x.d))),dv=m7!=null&&mp!=null?m7-mp:null,d=day(),n=['Pagi','Siang','Malam'],kopi=S.l.mn.reduce((a,x)=>a+(/^Kopi/.test(x)?d.q[x]||0:0),0);
+return `<div class="c"><span class="big" id="clk"></span><span class="m" id="dt"></span><h1>Halo, ${S.name.replace(/</g,'&lt;')}</h1></div>
+${warn()?'<div class="k">Cemasmu tinggi 3 hari berturut-turut. Pertimbangkan menghubungi dokter atau psikolog.</div>':''}
+<div class="c"><h2>Check-in cemas hari ini</h2><div class="r">${n.map((t,i)=>`<span class="b${d.c[i]!=null?' on':''}" style="display:flex;align-items:center;justify-content:center;font-size:13px">${d.c[i]!=null?'✓ ':''}${t}</span>`).join('')}</div><button class="p" data-a="nav" data-k="ci">Isi check-in</button></div>
+<div class="c"><h2>Obat</h2><div class="r">${bt('Pagi',d.ob[0],'ob',0)}${bt('Malam',d.ob[1],'ob',1)}</div><p class="m">Ketuk = sudah minum. Tidak diketuk = belum.</p></div>
+<div class="r"><button class="b d" data-a="nav" data-k="pem">+ Catat pemicu</button><button class="b d" data-a="nav" data-k="cap">+ Pencapaian kecil</button></div>
+<div class="c"><h2>Sekilas minggu ini</h2><div class="r"><div class="k" style="flex:1"><b style="font-size:22px;color:var(--ac)">${fm(da(d))}</b><br>Cemas hari ini (sementara)</div><div class="k" style="flex:1"><b style="font-size:22px;color:var(--ac)">${fm(m7)}</b><br>Rata-rata 7 hari</div></div>${dv!=null?`<p class="m">${Math.abs(dv)<1?'Stabil':dv>0?'Naik '+f1(dv)+' poin':'Turun '+f1(-dv)+' poin'} dibanding minggu lalu.</p>`:''}<button class="b" data-a="nav" data-k="pl">Lihat pola</button></div>`}
+function ci(){const d=day(),G=[['kd','Keringat dingin'],['bt','Badan tegang'],['jk','Jantung kencang'],['lt','Lelah terus-menerus']],ol=d.ol,mk=d.mk;
+return `<h1>Check-in hari ini</h1>
+<div class="c"><h2>Tingkat cemas</h2>${['Pagi','Siang','Malam'].map((t,i)=>rng(t,d.c[i],'c'+i)).join('')}<div class="k" id="sm">${smry(d)}</div><p class="m">0-2 tenang · 3-4 ringan · 5-6 mengganggu · 7-8 berat · 9-10 tidak bisa apa-apa</p></div>
+<div class="c"><h2>Energi</h2>${rng('Lelah fisik',d.lf,'lf')}<p class="m">0 segar · 5 badan berat tapi jalan terus · 10 tidak sanggup bergerak</p>${rng('Lelah mental',d.lm,'lm')}<p class="m">0 semangat · 5 malas, harus dipaksa · 10 hampa, tidak mau apa-apa</p></div>
+<div class="c"><h2>Gejala fisik</h2><p class="m">0 tidak ada · 1 ringan · 2 cukup mengganggu · 3 berat</p>${G.map(([k,t])=>`<div><div style="margin-bottom:6px">${t}</div>${seg(['0','1','2','3'],d.g[k],'g',k+'|')}</div>`).join('')}</div>
+<div class="c"><h2>Mood</h2><div class="r w">${['Baik','Biasa','Datar','Cemas','Sedih'].map((t,i)=>bt(t,d.mood===i,'mood',i)).join('')}</div></div>
+<div class="c"><h2>Tidur</h2>${d.sl.map((s,i)=>`<div class="r"><input type="time" value="${s.a}" data-t="${i}|a" aria-label="Mulai tidur"><input type="time" value="${s.b}" data-t="${i}|b" aria-label="Bangun"><b>${dur(mins(s.a,s.b))}</b><button class="b s" aria-label="Hapus sesi" data-a="sd" data-k="${i}">×</button></div>`).join('')}${d.sl.length?`<div class="k">Total tidur: <b>${dur(d.sl.reduce((a,s)=>a+mins(s.a,s.b),0))}</b></div>`:''}<button class="b d" data-a="sa">+ Tambah sesi tidur</button></div>
+<div class="c"><h2>Obat</h2><div class="r">${bt('Pagi',d.ob[0],'ob',0)}${bt('Malam',d.ob[1],'ob',1)}</div><p class="m">Ketuk = sudah minum. Tidak diketuk = belum.</p></div>
+<div class="c"><h2>Olahraga</h2>${bt('Sudah olahraga',ol.on,'ol',0)}${ol.on?`<div>Durasi (menit)</div><div class="r">${[15,30,45,60].map(x=>bt(x,ol.dur===x,'dur',x)).join('')}</div><div>Jenis</div><div class="r w">${S.l.ol.map(x=>bt(esc(x),ol.jn===x,'jn',esc(x))).join('')}</div><div class="r"><input type="text" id="ni-ol" placeholder="Jenis lain, ketik sendiri" style="flex:1;min-width:0"><button class="b d" style="flex:none" data-a="add" data-k="ol">Tambah</button></div>`:''}</div>
+<div class="c"><h2>Pola makan</h2>${bt('Sudah makan',mk.on,'mk',0)}${mk.on?`<div>Berapa kali makan berat?</div><div class="r">${[1,2,3,4].map(x=>bt(x==4?'4+':x,mk.n===x,'mkn',x)).join('')}</div>`:''}</div>
+<div class="c"><h2>Minuman (gelas)</h2>${list('mn','Minuman lain',d)}<h2>Camilan (porsi)</h2>${list('cm','Camilan lain',d)}<p class="m">Isi sendiri, bisa ditambah atau dikurangi. Kopi dirangkum untuk evaluasi saat kontrol.</p></div>
+<button class="b d" data-a="nav" data-k="pem">+ Catat pemicu</button><button class="p" data-a="nav" data-k="home">Simpan check-in</button><p class="m">Tersimpan otomatis di HP ini.</p>`}
+function set(){const th=(k,t,bg)=>`<button class="b" style="display:flex;flex-direction:column;gap:6px;padding:6px;height:auto;border:${S.theme==k?'2px solid var(--ac)':'1px solid var(--ln)'};background:var(--cd)" data-a="th" data-k="${k}"><span style="height:40px;width:100%;border-radius:10px;background:${bg}"></span><span style="font-weight:${S.theme==k?700:400}">${t}</span></button>`,
+row=(t,sub,k)=>`<button class="b" style="text-align:left;background:transparent;border-top:1px solid var(--so);border-radius:0;display:flex;justify-content:space-between;align-items:center;width:100%;min-height:56px;padding:0;${k?'':'opacity:.55'}" ${k?`data-a="nav" data-k="${k}"`:'disabled'}><span><span style="display:block">${t}</span><span class="m" style="display:block">${sub}</span></span><span aria-hidden="true">›</span></button>`;
+return `<h1>Pengaturan</h1><div class="c"><h2>Dasar</h2><label for="nama">Nama sapaan</label><input type="text" id="nama" value="${esc(S.name)}" maxlength="20"><div>Latar</div><div class="r">${th('light','Terang','#F1F7F6')}${th('dark','Gelap','#1E2B2E')}${th('auto','Otomatis','linear-gradient(90deg,#F1F7F6 50%,#1E2B2E 50%)')}</div></div><div class="c" style="gap:0"><h2 style="padding-bottom:8px">Lainnya</h2>${row('Pengingat','Check-in, obat, olahraga','rem')}${row('Peringatan hari berat','Skor '+(S.wt||7)+', '+(S.wd||3)+' hari berturut-turut','wr')}${row('Daftar saya','Tag pemicu, minuman, camilan','ls')}${row('Cadangan dan data','Ekspor dan hapus data','bk')}</div>`}
+const RM=[['c0','Check-in pagi','08:00',1],['c1','Check-in siang','13:00',1],['c2','Check-in malam','20:00',1],['o0','Obat pagi','08:00',1],['o1','Obat malam','20:00',1],['ol','Pengingat olahraga','16:00',0],['wk','Ringkasan mingguan (Minggu)','19:00',1],['lk','Sembunyikan isi di layar kunci','',1]];
+const rmv=k=>{S.rm=S.rm||{};const r=RM.find(x=>x[0]==k);return S.rm[k]||(S.rm[k]=[r[3],r[2]])};
+const swt=k=>{const r=rmv(k),l=RM.find(x=>x[0]==k)[1];return `<div class="r" style="min-height:52px"><span style="flex:1">${l}</span>${r[1]!==''?`<input type="time" value="${r[1]}" data-m="${k}" aria-label="Jam ${l}">`:''}<button class="b${r[0]?' on':''}" style="flex:none;width:68px;padding:0" role="switch" aria-checked="${r[0]?'true':'false'}" aria-label="${l}" data-a="sw" data-k="${k}">${r[0]?'Aktif':'Mati'}</button></div>`};
+function ls(){return '<h1>Daftar saya</h1>'+[['tg','Tag pemicu','Tag baru'],['mn','Minuman','Minuman baru'],['cm','Camilan','Camilan baru'],['ol','Jenis olahraga','Olahraga baru']].map(([k,t,ph])=>`<div class="c"><h2>${t}</h2>${S.l[k].map((x,i)=>`<div class="r"><input type="text" value="${esc(x)}" data-n="${k}|${i}" aria-label="Ubah nama ${esc(x)}" style="flex:1;min-width:0"><button class="b s" aria-label="Hapus ${esc(x)}" data-a="ld" data-k="${k}|${i}">×</button></div>`).join('')||'<p class="m">Kosong</p>'}<div class="r"><input type="text" id="ni-${k}" placeholder="${ph}" style="flex:1;min-width:0"><button class="b d" style="flex:none" data-a="add" data-k="${k}">Tambah</button></div></div>`).join('')+'<p class="m">Ketik langsung untuk mengubah nama, ketuk × untuk menghapus.</p>'}
+function bk(){return `<h1>Cadangan dan data</h1><div class="c"><h2>Ekspor data</h2><p class="m">Simpan semua catatanmu ke file JSON di HP.</p><button class="p" data-a="ex">Ekspor semua data</button></div><div class="c"><h2>Hapus semua data</h2><p class="m">Menghapus semua catatan di HP ini. Tidak bisa dibatalkan.</p>${CF?'<button class="b" style="border:1px solid #A4572B;color:#A4572B;background:transparent" data-a="dl">Ya, hapus sekarang</button><button class="b" data-a="cf" data-k="0">Batal</button>':'<button class="b d" data-a="cf" data-k="1">Hapus semua data</button>'}</div><div class="k">Cadangan otomatis ke Google Drive menyusul.</div>`}
+function rem(){return `<h1>Pengingat</h1><div class="c"><h2>Check-in cemas</h2>${swt('c0')}${swt('c1')}${swt('c2')}</div><div class="c"><h2>Obat</h2>${swt('o0')}${swt('o1')}</div><div class="c"><h2>Lainnya</h2>${swt('ol')}${swt('wk')}${swt('lk')}</div><div class="k">Notifikasi di versi web belum aktif. Pengaturan ini tersimpan dan dipakai di versi Android. Sementara, pakai alarm HP.</div>`}
+function wr(){const st=(l,v,a,u)=>`<div class="r"><span>${l}</span><div class="r"><button class="b s" aria-label="Kurangi ${l}" data-a="${a}" data-k="-1">-</button><b style="min-width:56px;text-align:center">${v}${u}</b><button class="b s" aria-label="Tambah ${l}" data-a="${a}" data-k="1">+</button></div></div>`;return `<h1>Peringatan hari berat</h1><div class="c">${st('Skor puncak mulai',S.wt||7,'wt','')}${st('Berturut-turut',S.wd||3,'wd',' hari')}<p class="m">Saran menghubungi dokter muncul jika puncak cemas mencapai nilai ini selama beberapa hari berturut-turut.</p></div>`}
+const lastD=n=>{const a=[];for(let i=n-1;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);a.push({dt,d:S.days[kd(dt)]})}return a};
+const da=d=>{const f=d.c.filter(x=>x!=null);return f.length?f.reduce((a,b)=>a+b,0)/f.length:null};
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const fm=x=>x==null?'–':f1(x);
+const kop=d=>S.l.mn.reduce((a,x)=>a+(/^Kopi/.test(x)?d.q[x]||0:0),0);
+const slm=d=>d.sl.reduce((a,s)=>a+mins(s.a,s.b),0);
+const rw=(a,b,h)=>`<div class="r"><span>${a}</span><b style="text-align:right">${b}</b></div>${h?'<p class="m">'+h+'</p>':''}`;
+function cmp(t,arr,p,A,Bt){const w=arr.filter(x=>x.d&&da(x.d)!=null),a=w.filter(x=>p(x.d)),b=w.filter(x=>!p(x.d));
+return `<div><b>${t}</b>`+(w.length>=14&&a.length>=4&&b.length>=4?rw(A,'rata-rata '+fm(mean(a.map(x=>da(x.d)))))+rw(Bt,'rata-rata '+fm(mean(b.map(x=>da(x.d))))):'<p class="m">Data belum cukup (minimal 14 hari terisi dan 4 hari per kelompok).</p>')+'</div>'}
+function cat(m){const d=day(),td=kd(new Date()),L=S.pm.map((x,i)=>[x,i]).filter(p=>p[0].d==td);
+const yd=S.days[kd(new Date(Date.now()-864e5))],K=yd&&yd.pc&&yd.pc.length?`<div class="c"><h2>Kemarin (${yd.pc.length})</h2>${yd.pc.map(x=>'<div>✓ '+esc(x)+'</div>').join('')}</div>`:'',wk=lastD(7).map(x=>x.d&&x.d.pc?x.d.pc.length:0),W=`<div class="c"><h2>Minggu ini</h2>${rw('Pencapaian',wk.reduce((a,b)=>a+b,0))}${rw('Hari ada pencapaian',wk.filter(x=>x).length)}</div>`;
+const P=`<div class="c"><h2>Catat pemicu</h2><label for="fs">Situasi</label><textarea id="fs" placeholder="Apa yang terjadi?">${esc(F.s)}</textarea>
+<div>Tag pemicu</div><div class="r w">${S.l.tg.map(t=>bt(esc(t),F.tg.includes(t),'tg',esc(t))).join('')}</div>
+<div class="r"><input type="text" id="ni-tg" placeholder="Tag baru" style="flex:1;min-width:0"><button class="b d" style="flex:none" data-a="add" data-k="tg">Tambah</button></div>
+<label for="fp">Pikiran otomatis</label><textarea id="fp" placeholder="Apa yang terlintas?">${esc(F.p)}</textarea>
+<label for="fb">Versi seimbang (opsional)</label><textarea id="fb" placeholder="Versi yang lebih realistis">${esc(F.b)}</textarea>
+${rng('Cemas saat itu',F.k,'fk')}<p class="m">0-2 tenang · 3-4 ringan · 5-6 mengganggu · 7-8 berat · 9-10 tidak bisa apa-apa</p><button class="p" data-a="pm">Simpan pemicu</button></div>
+${L.length?`<div class="c"><h2>Pemicu hari ini</h2>${L.map(([x,i])=>`<div class="k"><div class="r"><b>${esc(x.tg.join(', '))||'Tanpa tag'} · ${x.k}/10</b><button class="b s" aria-label="Hapus pemicu" data-a="pd" data-k="${i}">×</button></div>${esc(x.s)}${x.p?'<br>Pikiran: '+esc(x.p):''}${x.b?'<br>Seimbang: '+esc(x.b):''}</div>`).join('')}</div>`:''}`,C=`<div class="c"><h2>Hari ini (${(d.pc||[]).length})</h2><div class="r"><input type="text" id="pci" placeholder="Apa yang berhasil hari ini?" style="flex:1;min-width:0"><button class="b d" style="flex:none" data-a="pc">Tambah</button></div>${(d.pc||[]).map((x,i)=>`<div class="r"><span>✓ ${esc(x)}</span><button class="b s" aria-label="Hapus" data-a="pcd" data-k="${i}">×</button></div>`).join('')}</div>`;return m=='c'?'<h1>Pencapaian kecil</h1><p class="m">Sekecil apa pun, catat di sini.</p>'+C+K+W:'<h1>Catat pemicu</h1><p class="m">Bisa diisi kapan saja saat cemas muncul.</p>'+P}
+function pl(m){const NP=m=='d'?PER:28,all=lastD(30),w=all.slice(23),pv=all.slice(16,23),ok=a=>a.filter(x=>x.d&&da(x.d)!=null),pk=x=>x.d&&da(x.d)!=null?Math.max(...x.d.c.filter(y=>y!=null)):null,
+t2=mean(ok(w).map(x=>da(x.d))),t1=mean(ok(pv).map(x=>da(x.d))),fl=ok(all.slice(30-NP)),k0=kd(all[30-NP].dt),
+pts=w.map((x,i)=>[24+i*47,pk(x)]).filter(p=>p[1]!=null).map(p=>[p[0],120-p[1]*11]),
+df=t1!=null&&t2!=null?t2-t1:null,
+tr=df==null?'Tren muncul setelah dua minggu data.':`Rata-rata 7 hari ${fm(t2)}, minggu lalu ${fm(t1)}. ${Math.abs(df)<1?'Stabil':df>0?'Naik '+f1(df)+' poin':'Turun '+f1(-df)+' poin'}.`,
+GJ=[['kd','Keringat dingin'],['bt','Badan tegang'],['jk','Jantung kencang'],['lt','Lelah terus-menerus']].map(([k,t])=>[t,fl.filter(x=>x.d.g[k]>=1).length]).sort((a,b)=>b[1]-a[1]).filter(g=>g[1]>0).slice(0,3),
+tg={};S.pm.filter(x=>x.d>=k0).forEach(x=>x.tg.forEach(t=>tg[t]=(tg[t]||0)+1));
+const TG=Object.entries(tg).sort((a,b)=>b[1]-a[1]).slice(0,3),rec=all.slice(30-NP).filter(x=>x.d),sl=rec.filter(x=>x.d.sl.length),pct=i=>rec.length?Math.round(rec.filter(x=>x.d.ob[i]).length/rec.length*100)+'%':'–';
+const A=`<div class="c"><h2>Cemas per hari (puncak)</h2>${pts.length?`<svg viewBox="0 0 330 150" role="img" aria-label="Grafik cemas puncak 7 hari terakhir"><line x1="14" y1="43" x2="320" y2="43" stroke="#D9885B" stroke-dasharray="4 4"/><text x="318" y="38" font-size="10" text-anchor="end" fill="#D9885B">batas 7</text><line x1="14" y1="120" x2="320" y2="120" style="stroke:var(--ln)"/><polyline fill="none" style="stroke:var(--ac)" stroke-width="2.5" points="${pts.map(p=>p[0]+','+p[1]).join(' ')}"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" style="fill:var(--ac)"/>`).join('')}${w.map((x,i)=>`<text x="${24+i*47}" y="142" font-size="11" text-anchor="middle" style="fill:var(--mut)">${H[x.dt.getDay()].slice(0,3)}</text>`).join('')}</svg>`:'<p class="m">Belum ada data cemas 7 hari terakhir.</p>'}<p class="m">${tr}</p></div>`,Bc=`<div class="c"><h2>Hubungan dengan cemas</h2>${cmp('Cemas vs tidur',sl,d=>slm(d)<360,'Tidur kurang dari 6 jam','Tidur 6 jam atau lebih')}${cmp('Cemas vs kopi',fl,d=>kop(d)>=3,'Kopi 3 gelas atau lebih','Kopi 2 gelas atau kurang')}<p class="m">Ini hubungan, belum tentu sebab-akibat.</p></div>`,Dk=`<div class="r">${bt('2 minggu',NP==14,'per',14)}${bt('4 minggu',NP==28,'per',28)}${bt('1 bulan',NP==30,'per',30)}</div><div class="c"><h2>Gambaran umum (${NP} hari)</h2><p class="m">Patokan di bawah bersifat umum untuk membantu membaca angka. Yang menilai tetap dokter.</p>${rw('Hari terisi',fl.length+' dari '+NP)}${rw('Rata-rata cemas',fm(mean(fl.map(x=>da(x.d)))),'0-2 tenang · 3-4 ringan · 5-6 mengganggu · 7-8 berat · 9-10 sangat berat')}${rw('Cemas tertinggi',fl.length?Math.max(...fl.map(pk)):'–','Skor puncak tertinggi pada periode ini')}${rw('Hari puncak 7 atau lebih',fl.filter(x=>pk(x)>=7).length,'Jumlah hari dengan cemas berat. Makin sedikit makin baik')}${rw('Rata-rata tidur',sl.length?dur(Math.round(mean(sl.map(x=>slm(x.d))))):'–','Patokan umum dewasa: 7-9 jam per hari')}${rw('Obat pagi · malam',pct(0)+' · '+pct(1),'Patokan umum: 80% ke atas dianggap baik')}${rw('Rata-rata kopi',fm(mean(rec.map(x=>kop(x.d))))+' gelas/hari','Patokan umum dewasa: sampai sekitar 4 cangkir kopi per hari')}${rw('Hari olahraga',rec.filter(x=>x.d.ol.on).length+' hari','Patokan umum: aktivitas sedang sekitar 150 menit per minggu')}${rw('Makan berat per hari',fm(mean(rec.filter(x=>x.d.mk.on&&x.d.mk.n).map(x=>x.d.mk.n)))+' kali')}${rw('Gejala tersering',GJ.map(g=>g[0]+' '+g[1]+' hari').join(', ')||'–','Jumlah hari gejala muncul dalam periode ini')}${rw('Pemicu teratas',TG.map(t=>t[0]+' ('+t[1]+'x)').join(', ')||'–')}<label for="dq" style="font-weight:700">Pertanyaan untuk dokter</label><textarea id="dq" placeholder="Tulis keluhan atau pertanyaan sebelum kontrol">${esc(S.dq)}</textarea><button class="p np" data-a="pr">Cetak / simpan PDF</button></div>`;return m=='d'?'<h1>Ringkasan untuk dokter</h1>'+Dk:'<h1>Pola</h1>'+A+Bc}
+const tgl=()=>`<h1>Pola</h1><div class="r">${bt('Grafik',PV=='g','pv','g')}${bt('Riwayat',PV=='r','pv','r')}</div>`;
+function riw(){RD=RD||kd(new Date());const ds=lastD(14),d=S.days[RD],dt=new Date(RD+'T00:00'),
+strip=ds.map(x=>{const k=kd(x.dt),a=x.d?da(x.d):null;return `<button class="b${k==RD?' on':''}" style="flex:none;width:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0;font-size:12px" data-a="rd" data-k="${k}"><span>${H[x.dt.getDay()].slice(0,3)}</span><b style="font-size:15px">${x.dt.getDate()}</b><span>${a!=null?f1(a):'–'}</span></button>`}).join('');
+let body='<p class="m">Tidak ada catatan di hari ini.</p>';
+if(d){const nm=a=>S.l[a].filter(n=>d.q[n]).map(n=>n+' '+d.q[n]).join(', ')||'–',G=[['kd','Keringat dingin'],['bt','Badan tegang'],['jk','Jantung kencang'],['lt','Lelah terus-menerus']].filter(([k])=>d.g[k]>=1).map(([k,t])=>t+' '+d.g[k]).join(', ')||'–',f=d.c.filter(x=>x!=null),pm=S.pm.filter(x=>x.d==RD);
+body=rw('Cemas (pagi · siang · malam)',d.c.map(x=>x==null?'–':x).join(' · '))+rw('Rata-rata · puncak',f.length?fm(da(d))+' · '+Math.max(...f):'–')+rw('Lelah fisik · mental',(d.lf==null?'–':d.lf)+' · '+(d.lm==null?'–':d.lm))+rw('Gejala fisik',G)+rw('Mood',d.mood==null?'–':['Baik','Biasa','Datar','Cemas','Sedih'][d.mood])+rw('Tidur',d.sl.length?dur(slm(d)):'–')+rw('Obat pagi · malam',(d.ob[0]?'sudah':'belum')+' · '+(d.ob[1]?'sudah':'belum'))+rw('Olahraga',d.ol.on?(d.ol.dur||'?')+' menit '+(d.ol.jn||''):'belum')+rw('Makan berat',d.mk.on?(d.mk.n||'?')+' kali':'belum')+rw('Minuman',nm('mn'))+rw('Camilan',nm('cm'))+rw('Pemicu',pm.map(x=>esc(x.tg.join('/')||x.s)).join('; ')||'–')+rw('Pencapaian',(d.pc||[]).map(esc).join('; ')||'–')}
+return '<h1>Riwayat</h1><p class="m">Ketuk hari untuk melihat catatannya.</p>'+`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${strip}</div><p class="m">Angka kecil = rata-rata cemas hari itu.</p><div class="c"><h2>${H[dt.getDay()]}, ${dt.getDate()} ${B[dt.getMonth()]}</h2>${body}</div>`}
+function tick(){const e=$('#clk');if(!e)return;const n=new Date();e.textContent=z2(n.getHours())+'.'+z2(n.getMinutes());$('#dt').textContent=H[n.getDay()]+', '+n.getDate()+' '+B[n.getMonth()]+' '+n.getFullYear()}
+function render(){const sub=['rem','wr','ls','bk'].includes(v),r=document.documentElement;S.theme=='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',S.theme);
+$('#app').innerHTML=(sub?'<button class="b" style="flex:none;align-self:flex-start;padding:0 16px" data-a="nav" data-k="set">‹ Kembali</button>':'')+({home,ci,pem:()=>cat(),cap:()=>cat('c'),pl:()=>pl(),rw:riw,dok:()=>pl('d'),set,rem,wr,ls,bk})[v]();
+const act={ci:'home',pem:'home',cap:'home',rem:'set',wr:'set',ls:'set',bk:'set'}[v]||v;
+$('#nav').innerHTML=[['home','Beranda'],['pl','Pola'],['rw','Riwayat'],['dok','Dokter'],['set','Pengaturan']].map(([k,t])=>`<button class="b${act==k?' on':''}" data-a="nav" data-k="${k}">${ic(k)}<span>${t}</span></button>`).join('');$('#nav').style.display=sub?'none':'flex';tick()}
+const IC={home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',pl:'<path d="M5 20V11M11 20V4M17 20v-6M3 20h18"/>',rw:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',dok:'<path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'};
+const ic=k=>`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,k=t.dataset.k,[x,y,z]=(k||'').split('|'),d=day();
+['s','p','b'].forEach(i=>{const e=$('#f'+i);if(e)F[i]=e.value});
+if(a=='nav'){v=k;scrollTo(0,0)}
+else if(a=='g')d.g[x]=+y;
+else if(a=='mood')d.mood=+k;
+else if(a=='ob')d.ob[+k]^=1;
+else if(a=='ol')d.ol.on=d.ol.on?0:1;
+else if(a=='dur')d.ol.dur=+k;
+else if(a=='jn')d.ol.jn=k;
+else if(a=='mk')d.mk.on=d.mk.on?0:1;
+else if(a=='mkn')d.mk.n=+k;
+else if(a=='q'){const nm=S.l[x][+y];d.q[nm]=Math.max(0,(d.q[nm]||0)+ +z)}
+else if(a=='add'){const s=$('#ni-'+k).value.trim();if(s&&!S.l[k].includes(s))S.l[k].push(s);if(k=='ol'&&s)d.ol.jn=s}
+else if(a=='sa')d.sl.push({a:'22:30',b:'05:00'});
+else if(a=='sd')d.sl.splice(+k,1);
+else if(a=='th')S.theme=k;
+else if(a=='tg'){const i=F.tg.indexOf(k);i<0?F.tg.push(k):F.tg.splice(i,1)}
+else if(a=='pm'){if(F.s||F.p){S.pm.push({d:kd(new Date()),s:F.s||'',tg:F.tg,p:F.p||'',b:F.b||'',k:F.k});F={tg:[],k:5}}}
+else if(a=='pd')S.pm.splice(+k,1);
+else if(a=='pc'){const s=$('#pci').value.trim();if(s){d.pc=d.pc||[];d.pc.push(s)}}
+else if(a=='pcd')d.pc.splice(+k,1);
+else if(a=='pr')print();
+else if(a=='pv')PV=k;
+else if(a=='rd')RD=k;
+else if(a=='per')PER=+k;
+else if(a=='ld')S.l[x].splice(+y,1);
+else if(a=='cf')CF=+k;
+else if(a=='dl'){S.days={};S.pm=[];CF=0}
+else if(a=='ex'){try{const u=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download='pelacak-cemas-'+kd(new Date())+'.json';l.click()}catch(e){}}
+else if(a=='sw'){const r=rmv(k);r[0]^=1}
+else if(a=='wt')S.wt=Math.min(10,Math.max(1,(S.wt||7)+ +k));
+else if(a=='wd')S.wd=Math.min(7,Math.max(1,(S.wd||3)+ +k));
+save();render()});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset.t){const[i,w]=t.dataset.t.split('|');day().sl[+i][w]=t.value;save();render()}else if(t.dataset.n){const[k,i]=t.dataset.n.split('|'),o=S.l[k][+i],n=t.value.trim();if(n&&n!=o&&!S.l[k].includes(n)){S.l[k][+i]=n;Object.values(S.days).forEach(d=>{if((k=='mn'||k=='cm')&&d.q&&o in d.q){d.q[n]=d.q[o];delete d.q[o]}if(k=='ol'&&d.ol&&d.ol.jn==o)d.ol.jn=n});if(k=='tg')S.pm.forEach(x=>{x.tg=x.tg.map(y=>y==o?n:y)});save();render()}else t.value=o}
+else if(t.id=='dq'){S.dq=t.value;save()}else if(t.dataset.m){rmv(t.dataset.m)[1]=t.value;save()}else if(t.id=='nama'){S.name=t.value.trim()||'Sul';save()}});
+document.addEventListener('input',e=>{const t=e.target,r=t.dataset.r;if(!r)return;const d=day(),n=+t.value;if(r=='fk')F.k=n;else{if(r[0]=='c')d.c[+r[1]]=n;else d[r]=n;save()}$('#v'+r).textContent=n+'/10';if($('#sm'))$('#sm').innerHTML=smry(d)});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+setInterval(tick,1000);render();
+</script>
+</body>
+</html>
