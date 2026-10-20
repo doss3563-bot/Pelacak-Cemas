@@ -45,13 +45,13 @@ nav .b.on{background:var(--so);color:var(--ac)}
 const $=s=>document.querySelector(s);
 let S=null;try{S=JSON.parse(localStorage.getItem('tc')||'null')}catch(e){}
 S=S||{name:'Sul',theme:'auto',days:{},l:{mn:['Kopi pahit','Kopi gula','Teh pahit','Teh gula'],cm:['Gorengan']}};
-S.l.ol=S.l.ol||['Lari','Jalan','Gym'];S.l.tg=S.l.tg||['Cari kerja','Uang','Tidur kurang','Kesalahan','Keluarga'];S.pm=S.pm||[];let F={tg:[],k:5},RD='',PV='g',PER=28,CF=0;
+S.l.ol=S.l.ol||['Lari','Jalan','Gym'];S.l.tg=S.l.tg||['Cari kerja','Uang','Tidur kurang','Kesalahan','Keluarga'];S.pm=S.pm||[];let F={tg:[],k:5},RD='',PV='g',PER=28,CF=0,ED=null;
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const save=()=>{try{localStorage.setItem('tc',JSON.stringify(S))}catch(e){}};
 const H=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const z2=n=>String(n).padStart(2,'0');
 const kd=dt=>dt.getFullYear()+'-'+z2(dt.getMonth()+1)+'-'+z2(dt.getDate());
-const day=()=>S.days[kd(new Date())]||(S.days[kd(new Date())]={c:[null,null,null],g:{},ob:[0,0],ol:{},mk:{},q:{},sl:[]});
+const day=()=>{const k=ED||kd(new Date());return S.days[k]||(S.days[k]={c:[null,null,null],g:{},ob:[0,0],ol:{},mk:{},q:{},sl:[]})};
 const f1=n=>(Math.round(n*10)/10+'').replace('.',',');
 let v='home';
 const bt=(t,on,a,k)=>`<button class="b${on?' on':''}" data-a="${a}" data-k="${k}">${t}</button>`;
@@ -72,7 +72,8 @@ ${warn()?'<div class="k">Cemasmu tinggi 3 hari berturut-turut. Pertimbangkan men
 <div class="r"><button class="b d" data-a="nav" data-k="pem">+ Catat pemicu</button><button class="b d" data-a="nav" data-k="cap">+ Pencapaian kecil</button></div>
 <div class="c"><h2>Sekilas minggu ini</h2><div class="r"><div class="k" style="flex:1"><b style="font-size:22px;color:var(--ac)">${fm(da(d))}</b><br>Cemas hari ini (sementara)</div><div class="k" style="flex:1"><b style="font-size:22px;color:var(--ac)">${fm(m7)}</b><br>Rata-rata 7 hari</div></div>${dv!=null?`<p class="m">${Math.abs(dv)<1?'Stabil':dv>0?'Naik '+f1(dv)+' poin':'Turun '+f1(-dv)+' poin'} dibanding minggu lalu.</p>`:''}<button class="b" data-a="nav" data-k="pl">Lihat pola</button></div>`}
 function ci(){const d=day(),G=[['kd','Keringat dingin'],['bt','Badan tegang'],['jk','Jantung kencang'],['lt','Lelah terus-menerus']],ol=d.ol,mk=d.mk;
-return `<h1>Check-in hari ini</h1>
+const ds=ED?new Date(ED+'T00:00'):null,bk=ED&&S.bak&&S.bak[ED]!=null&&S.bak[ED]!==JSON.stringify(S.days[ED]||null);
+return `${ED?`<div class="c"><h2>Mengedit ${H[ds.getDay()]}, ${ds.getDate()} ${B[ds.getMonth()]}</h2><p class="m">Perubahan tersimpan otomatis. Versi sebelum diedit juga tersimpan, jadi tidak ada data yang hilang.</p>${bk?`<button class="b d" data-a="rs" data-k="${ED}">Tukar dengan versi sebelum diedit</button>`:''}<button class="p" data-a="nav" data-k="rw">Selesai</button></div>`:'<h1>Check-in hari ini</h1>'}
 <div class="c"><h2>Tingkat cemas</h2>${['Pagi','Siang','Malam'].map((t,i)=>rng(t,d.c[i],'c'+i)).join('')}<div class="k" id="sm">${smry(d)}</div><p class="m">0-2 tenang · 3-4 ringan · 5-6 mengganggu · 7-8 berat · 9-10 tidak bisa apa-apa</p></div>
 <div class="c"><h2>Energi</h2>${rng('Lelah fisik',d.lf,'lf')}<p class="m">0 segar · 5 badan berat tapi jalan terus · 10 tidak sanggup bergerak</p>${rng('Lelah mental',d.lm,'lm')}<p class="m">0 semangat · 5 malas, harus dipaksa · 10 hampa, tidak mau apa-apa</p></div>
 <div class="c"><h2>Gejala fisik</h2><p class="m">0 tidak ada · 1 ringan · 2 cukup mengganggu · 3 berat</p>${G.map(([k,t])=>`<div><div style="margin-bottom:6px">${t}</div>${seg(['0','1','2','3'],d.g[k],'g',k+'|')}</div>`).join('')}</div>
@@ -102,7 +103,7 @@ const slm=d=>d.sl.reduce((a,s)=>a+mins(s.a,s.b),0);
 const rw=(a,b,h)=>`<div class="r"><span>${a}</span><b style="text-align:right">${b}</b></div>${h?'<p class="m">'+h+'</p>':''}`;
 function cmp(t,arr,p,A,Bt){const w=arr.filter(x=>x.d&&da(x.d)!=null),a=w.filter(x=>p(x.d)),b=w.filter(x=>!p(x.d));
 return `<div><b>${t}</b>`+(w.length>=14&&a.length>=4&&b.length>=4?rw(A,'rata-rata '+fm(mean(a.map(x=>da(x.d)))))+rw(Bt,'rata-rata '+fm(mean(b.map(x=>da(x.d))))):'<p class="m">Data belum cukup (minimal 14 hari terisi dan 4 hari per kelompok).</p>')+'</div>'}
-function cat(m){const d=day(),td=kd(new Date()),L=S.pm.map((x,i)=>[x,i]).filter(p=>p[0].d==td);
+function cat(m){const d=day(),td=ED||kd(new Date()),L=S.pm.map((x,i)=>[x,i]).filter(p=>p[0].d==td);
 const yd=S.days[kd(new Date(Date.now()-864e5))],K=yd&&yd.pc&&yd.pc.length?`<div class="c"><h2>Kemarin (${yd.pc.length})</h2>${yd.pc.map(x=>'<div>✓ '+esc(x)+'</div>').join('')}</div>`:'',wk=lastD(7).map(x=>x.d&&x.d.pc?x.d.pc.length:0),W=`<div class="c"><h2>Minggu ini</h2>${rw('Pencapaian',wk.reduce((a,b)=>a+b,0))}${rw('Hari ada pencapaian',wk.filter(x=>x).length)}</div>`;
 const P=`<div class="c"><h2>Catat pemicu</h2><label for="fs">Situasi</label><textarea id="fs" placeholder="Apa yang terjadi?">${esc(F.s)}</textarea>
 <div>Tag pemicu</div><div class="r w">${S.l.tg.map(t=>bt(esc(t),F.tg.includes(t),'tg',esc(t))).join('')}</div>
@@ -126,7 +127,7 @@ strip=ds.map(x=>{const k=kd(x.dt),a=x.d?da(x.d):null;return `<button class="b${k
 let body='<p class="m">Tidak ada catatan di hari ini.</p>';
 if(d){const nm=a=>S.l[a].filter(n=>d.q[n]).map(n=>n+' '+d.q[n]).join(', ')||'–',G=[['kd','Keringat dingin'],['bt','Badan tegang'],['jk','Jantung kencang'],['lt','Lelah terus-menerus']].filter(([k])=>d.g[k]>=1).map(([k,t])=>t+' '+d.g[k]).join(', ')||'–',f=d.c.filter(x=>x!=null),pm=S.pm.filter(x=>x.d==RD);
 body=rw('Cemas (pagi · siang · malam)',d.c.map(x=>x==null?'–':x).join(' · '))+rw('Rata-rata · puncak',f.length?fm(da(d))+' · '+Math.max(...f):'–')+rw('Lelah fisik · mental',(d.lf==null?'–':d.lf)+' · '+(d.lm==null?'–':d.lm))+rw('Gejala fisik',G)+rw('Mood',d.mood==null?'–':['Baik','Biasa','Datar','Cemas','Sedih'][d.mood])+rw('Tidur',d.sl.length?dur(slm(d)):'–')+rw('Obat pagi · malam',(d.ob[0]?'sudah':'belum')+' · '+(d.ob[1]?'sudah':'belum'))+rw('Olahraga',d.ol.on?(d.ol.dur||'?')+' menit '+(d.ol.jn||''):'belum')+rw('Makan berat',d.mk.on?(d.mk.n||'?')+' kali':'belum')+rw('Minuman',nm('mn'))+rw('Camilan',nm('cm'))+rw('Pemicu',pm.map(x=>esc(x.tg.join('/')||x.s)).join('; ')||'–')+rw('Pencapaian',(d.pc||[]).map(esc).join('; ')||'–')}
-return '<h1>Riwayat</h1><p class="m">Ketuk hari untuk melihat catatannya.</p>'+`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${strip}</div><p class="m">Angka kecil = rata-rata cemas hari itu.</p><div class="c"><h2>${H[dt.getDay()]}, ${dt.getDate()} ${B[dt.getMonth()]}</h2>${body}</div>`}
+return '<h1>Riwayat</h1><p class="m">Ketuk hari untuk melihat catatannya.</p>'+`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${strip}</div><p class="m">Angka kecil = rata-rata cemas hari itu.</p><div class="c"><h2>${H[dt.getDay()]}, ${dt.getDate()} ${B[dt.getMonth()]}</h2>${body}</div><button class="p" data-a="ed" data-k="${RD}">${d?'Edit catatan ini':'Isi catatan hari ini'}</button>${S.bak&&S.bak[RD]!=null&&S.bak[RD]!==JSON.stringify(S.days[RD]||null)?`<button class="b d" data-a="rs" data-k="${RD}">Tukar dengan versi sebelum diedit</button>`:''}`}
 function tick(){const e=$('#clk');if(!e)return;const n=new Date();e.textContent=z2(n.getHours())+'.'+z2(n.getMinutes());$('#dt').textContent=H[n.getDay()]+', '+n.getDate()+' '+B[n.getMonth()]+' '+n.getFullYear()}
 function render(){const sub=['rem','wr','ls','bk'].includes(v),r=document.documentElement;S.theme=='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',S.theme);
 $('#app').innerHTML=(sub?'<button class="b" style="flex:none;align-self:flex-start;padding:0 16px" data-a="nav" data-k="set">‹ Kembali</button>':'')+({home,ci,pem:()=>cat(),cap:()=>cat('c'),pl:()=>pl(),rw:riw,dok:()=>pl('d'),set,rem,wr,ls,bk})[v]();
@@ -136,7 +137,7 @@ const IC={home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',pl:'<path d="M5 20V11M1
 const ic=k=>`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,k=t.dataset.k,[x,y,z]=(k||'').split('|'),d=day();
 ['s','p','b'].forEach(i=>{const e=$('#f'+i);if(e)F[i]=e.value});
-if(a=='nav'){v=k;scrollTo(0,0)}
+if(a=='nav'){v=k;if(!['ci','pem','cap'].includes(k))ED=null;scrollTo(0,0)}
 else if(a=='g')d.g[x]=+y;
 else if(a=='mood')d.mood=+k;
 else if(a=='ob')d.ob[+k]^=1;
@@ -151,7 +152,7 @@ else if(a=='sa')d.sl.push({a:'22:30',b:'05:00'});
 else if(a=='sd')d.sl.splice(+k,1);
 else if(a=='th')S.theme=k;
 else if(a=='tg'){const i=F.tg.indexOf(k);i<0?F.tg.push(k):F.tg.splice(i,1)}
-else if(a=='pm'){if(F.s||F.p){S.pm.push({d:kd(new Date()),s:F.s||'',tg:F.tg,p:F.p||'',b:F.b||'',k:F.k});F={tg:[],k:5}}}
+else if(a=='pm'){if(F.s||F.p){S.pm.push({d:ED||kd(new Date()),s:F.s||'',tg:F.tg,p:F.p||'',b:F.b||'',k:F.k});F={tg:[],k:5}}}
 else if(a=='pd')S.pm.splice(+k,1);
 else if(a=='pc'){const s=$('#pci').value.trim();if(s){d.pc=d.pc||[];d.pc.push(s)}}
 else if(a=='pcd')d.pc.splice(+k,1);
@@ -159,6 +160,8 @@ else if(a=='pr')print();
 else if(a=='pv')PV=k;
 else if(a=='rd')RD=k;
 else if(a=='per')PER=+k;
+else if(a=='ed'){ED=k;S.bak=S.bak||{};S.bak[k]=JSON.stringify(S.days[k]||null);v='ci';scrollTo(0,0)}
+else if(a=='rs'){const o=S.bak&&S.bak[k];if(o!=null){const cur=JSON.stringify(S.days[k]||null);if(o=='null')delete S.days[k];else S.days[k]=JSON.parse(o);S.bak[k]=cur}}
 else if(a=='ld')S.l[x].splice(+y,1);
 else if(a=='cf')CF=+k;
 else if(a=='dl'){S.days={};S.pm=[];CF=0}
